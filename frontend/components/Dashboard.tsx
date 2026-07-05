@@ -49,6 +49,8 @@ export default function Dashboard() {
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
   
+  const [exporting, setExporting] = useState(false);
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleUploadClick = () => {
@@ -157,27 +159,26 @@ export default function Dashboard() {
     }
   };
 
-  const exportForLooker = () => {
+  const exportForLooker = async () => {
     if (!data || !data.enrichedRows?.length) return;
     
-    // Create CSV content from enriched rows
-    const headers = ["Date", "Decision Count", "Conflict Detected", "Resolution Status", "Task Status"];
-    const csvContent = [
-      headers.join(","),
-      ...data.enrichedRows.map(row => 
-        `${row.date},${row.decisionCount},${row.conflictDetected},"${row.resolutionStatus}","${row.taskStatus}"`
-      )
-    ].join("\n");
-
-    // Trigger download
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", "looker_analytics_export.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    setExporting(true);
+    try {
+      await fetch("https://script.google.com/macros/s/AKfycbxMGNWGMdPlxPe-_sa7BSYk6r79DEOS4gL7voC9o4BmiOtWNTwbSjNJ0C0IS160XeP2ZA/exec", {
+        method: "POST",
+        mode: "no-cors",
+        headers: {
+          "Content-Type": "text/plain",
+        },
+        body: JSON.stringify(data.enrichedRows)
+      });
+      alert("Success! The data has been instantly pushed to your Google Sheet for Looker.");
+    } catch (error) {
+      console.error("Export failed", error);
+      alert("Failed to export data. Please try again.");
+    } finally {
+      setExporting(false);
+    }
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -373,10 +374,15 @@ export default function Dashboard() {
               {data && (
                 <button 
                   onClick={exportForLooker}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-lg shadow-emerald-500/20 flex items-center"
+                  disabled={exporting}
+                  className={`${exporting ? 'bg-emerald-800' : 'bg-emerald-600 hover:bg-emerald-700'} text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-lg shadow-emerald-500/20 flex items-center`}
                 >
-                  <Download className="w-4 h-4 mr-2" />
-                  Export for Looker
+                  {exporting ? (
+                    <div className="w-4 h-4 mr-2 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  ) : (
+                    <Download className="w-4 h-4 mr-2" />
+                  )}
+                  {exporting ? 'Exporting...' : 'Export to Looker'}
                 </button>
               )}
               <button onClick={handleUploadClick} className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground px-5 py-2.5 rounded-full text-sm font-medium transition-all hover:scale-105 shadow-lg shadow-primary/20">
