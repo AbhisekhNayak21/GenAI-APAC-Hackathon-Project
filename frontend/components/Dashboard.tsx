@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react';
 import Papa from 'papaparse';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { UploadCloud, Activity, Send, CheckCircle2, Clock, FileText, AlertTriangle, HelpCircle, User, Calendar, ShieldAlert } from 'lucide-react';
+import { UploadCloud, Activity, Send, CheckCircle2, Clock, FileText, AlertTriangle, HelpCircle, User, Calendar, ShieldAlert, Download } from 'lucide-react';
 
 const COLORS_TASK = ['#eab308', '#3b82f6', '#22c55e']; // Pending, In Progress, Completed
 const COLORS_STATUS = ['#22c55e', '#3b82f6', '#ef4444']; // Decided, Discussing, Unresolved
@@ -143,6 +143,42 @@ export default function Dashboard() {
     };
   };
 
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: async (results) => {
+          await processCsvData(results);
+        }
+      });
+    }
+  };
+
+  const exportForLooker = () => {
+    if (!data || !data.enrichedRows?.length) return;
+    
+    // Create CSV content from enriched rows
+    const headers = ["Date", "Decision Count", "Conflict Detected", "Resolution Status", "Task Status"];
+    const csvContent = [
+      headers.join(","),
+      ...data.enrichedRows.map(row => 
+        `${row.date},${row.decisionCount},${row.conflictDetected},"${row.resolutionStatus}","${row.taskStatus}"`
+      )
+    ].join("\n");
+
+    // Trigger download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "looker_analytics_export.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -212,6 +248,7 @@ export default function Dashboard() {
 
               setData(prev => prev ? {
                 ...prev,
+                enrichedRows: parsedSummary.enrichedRows,
                 decisionsPerWeek: Object.keys(decisionsMap).map(week => ({ week, count: decisionsMap[week] })),
                 conflictsTimeline: Object.keys(conflictsMap).map(time => ({ time, count: conflictsMap[time] })),
                 taskStatus: [
@@ -331,10 +368,21 @@ export default function Dashboard() {
         </div>
         <div className="flex items-center gap-4 w-full md:w-auto">
           <input type="file" ref={fileInputRef} accept=".csv,.txt,.md,.pdf" className="hidden" onChange={handleFileChange} />
-          <button onClick={handleUploadClick} className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground px-5 py-2.5 rounded-full text-sm font-medium transition-all hover:scale-105 shadow-lg shadow-primary/20">
-            <UploadCloud className="w-5 h-5" />
-            <span>Upload Document</span>
-          </button>
+          <div className="flex items-center gap-4">
+              {data && (
+                <button 
+                  onClick={exportForLooker}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-lg shadow-emerald-500/20 flex items-center"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Export for Looker
+                </button>
+              )}
+              <button onClick={handleUploadClick} className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground px-5 py-2.5 rounded-full text-sm font-medium transition-all hover:scale-105 shadow-lg shadow-primary/20">
+                <UploadCloud className="w-5 h-5" />
+                <span>Upload Document</span>
+              </button>
+            </div>
         </div>
       </div>
 
