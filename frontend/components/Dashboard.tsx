@@ -15,6 +15,7 @@ interface ProcessedData {
   taskStatus: { name: string; value: number }[];
   statusSnapshot: { name: string; value: number }[];
   isHydrating?: boolean;
+  enrichedRows?: any[];
 }
 
 interface SpeakerStat {
