@@ -223,8 +223,8 @@ export default function Dashboard() {
               deadlines: parsedSummary.deadlines || []
             });
 
-            // HYBRID ANALYTICAL EXTRACTION: Hydrate charts if file was unstructured
-            if (processedData.isHydrating && parsedSummary.enrichedRows) {
+            // HYBRID ANALYTICAL EXTRACTION: Hydrate charts if file was unstructured or needs AI classification
+            if (parsedSummary.enrichedRows) {
               const decisionsMap: Record<string, number> = {};
               const conflictsMap: Record<string, number> = {};
               const statusCounts = { Pending: 0, 'In Progress': 0, Completed: 0 };
