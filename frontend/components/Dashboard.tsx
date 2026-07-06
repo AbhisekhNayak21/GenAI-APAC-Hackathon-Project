@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react';
 import Papa from 'papaparse';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { UploadCloud, Activity, Send, CheckCircle2, Clock, FileText, AlertTriangle, HelpCircle, User, Calendar, ShieldAlert, Download } from 'lucide-react';
+import { UploadCloud, Activity, Send, CheckCircle2, Clock, FileText, AlertTriangle, HelpCircle, User, Calendar, ShieldAlert, Download, ExternalLink } from 'lucide-react';
 
 const COLORS_TASK = ['#eab308', '#3b82f6', '#22c55e']; // Pending, In Progress, Completed
 const COLORS_STATUS = ['#22c55e', '#3b82f6', '#ef4444']; // Decided, Discussing, Unresolved
@@ -173,6 +173,7 @@ export default function Dashboard() {
         body: JSON.stringify(data.enrichedRows)
       });
       alert("Success! The data has been instantly pushed to your Google Sheet for Looker.");
+      window.open("https://docs.google.com/spreadsheets/d/12lMBUcRa2buY5dNOifVvR0c_spC1nTdtgVFv-GHY4Us/edit?gid=0#gid=0", "_blank");
     } catch (error) {
       console.error("Export failed", error);
       alert("Failed to export data. Please try again.");
@@ -372,18 +373,29 @@ export default function Dashboard() {
           <input type="file" ref={fileInputRef} accept=".csv,.txt,.md,.pdf" className="hidden" onChange={handleFileChange} />
           <div className="flex items-center gap-4">
               {data && (
-                <button 
-                  onClick={exportForLooker}
-                  disabled={exporting}
-                  className={`${exporting ? 'bg-emerald-800' : 'bg-emerald-600 hover:bg-emerald-700'} text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-lg shadow-emerald-500/20 flex items-center`}
-                >
-                  {exporting ? (
-                    <div className="w-4 h-4 mr-2 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  ) : (
-                    <Download className="w-4 h-4 mr-2" />
-                  )}
-                  {exporting ? 'Exporting...' : 'Export to Looker'}
-                </button>
+                <div className="flex items-center gap-2">
+                  <button 
+                    onClick={exportForLooker}
+                    disabled={exporting}
+                    className={`${exporting ? 'bg-emerald-800' : 'bg-emerald-600 hover:bg-emerald-700'} text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-lg shadow-emerald-500/20 flex items-center`}
+                  >
+                    {exporting ? (
+                      <div className="w-4 h-4 mr-2 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    ) : (
+                      <Download className="w-4 h-4 mr-2" />
+                    )}
+                    {exporting ? 'Exporting...' : 'Export to Looker'}
+                  </button>
+                  <a 
+                    href="https://docs.google.com/spreadsheets/d/12lMBUcRa2buY5dNOifVvR0c_spC1nTdtgVFv-GHY4Us/edit?gid=0#gid=0" 
+                    target="_blank" 
+                    rel="noreferrer"
+                    className="bg-background/50 hover:bg-card border border-border/60 text-muted-foreground hover:text-white p-2.5 rounded-lg transition-colors shadow-sm flex items-center justify-center"
+                    title="Open Google Sheet directly"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                </div>
               )}
               <button onClick={handleUploadClick} className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground px-5 py-2.5 rounded-full text-sm font-medium transition-all hover:scale-105 shadow-lg shadow-primary/20">
                 <UploadCloud className="w-5 h-5" />
