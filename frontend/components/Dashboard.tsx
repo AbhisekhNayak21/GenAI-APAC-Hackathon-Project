@@ -225,47 +225,55 @@ export default function Dashboard() {
               deadlines: parsedSummary.deadlines || []
             });
 
-            // HYBRID ANALYTICAL EXTRACTION: Hydrate charts if file was unstructured or needs AI classification
+            // HYBRID ANALYTICAL EXTRACTION
             if (parsedSummary.enrichedRows) {
-              const decisionsMap: Record<string, number> = {};
-              const conflictsMap: Record<string, number> = {};
-              const statusCounts = { Pending: 0, 'In Progress': 0, Completed: 0 };
-              const snapshotCounts = { Decided: 0, Discussing: 0, Unresolved: 0 };
-
-              parsedSummary.enrichedRows.forEach((row: any) => {
-                const timeLabel = row.date || 'Unknown';
-                
-                if (row.decisionCount > 0) decisionsMap[timeLabel] = (decisionsMap[timeLabel] || 0) + 1;
-                if (row.conflictDetected > 0) conflictsMap[timeLabel] = (conflictsMap[timeLabel] || 0) + 1;
-                
-                const task = (row.taskStatus || '').toLowerCase();
-                if (task.includes('pending')) statusCounts.Pending++;
-                if (task.includes('progress')) statusCounts['In Progress']++;
-                if (task.includes('complet')) statusCounts.Completed++;
-
-                const res = (row.resolutionStatus || '').toLowerCase();
-                if (res.includes('decid')) snapshotCounts.Decided++;
-                if (res.includes('discuss')) snapshotCounts.Discussing++;
-                if (res.includes('unresolv')) snapshotCounts.Unresolved++;
-              });
-
-              setData(prev => prev ? {
-                ...prev,
+              let updatedData: any = {
                 enrichedRows: parsedSummary.enrichedRows,
-                decisionsPerWeek: Object.keys(decisionsMap).map(week => ({ week, count: decisionsMap[week] })),
-                conflictsTimeline: Object.keys(conflictsMap).map(time => ({ time, count: conflictsMap[time] })),
-                taskStatus: [
-                  { name: 'Pending', value: statusCounts.Pending },
-                  { name: 'In Progress', value: statusCounts['In Progress'] },
-                  { name: 'Completed', value: statusCounts.Completed }
-                ],
-                statusSnapshot: [
-                  { name: 'Decided', value: snapshotCounts.Decided },
-                  { name: 'Discussing', value: snapshotCounts.Discussing },
-                  { name: 'Unresolved', value: snapshotCounts.Unresolved }
-                ],
                 isHydrating: false
-              } : null);
+              };
+
+              // Only overwrite the local charts if the uploaded file was completely unstructured
+              if (processedData.isHydrating) {
+                const decisionsMap: Record<string, number> = {};
+                const conflictsMap: Record<string, number> = {};
+                const statusCounts = { Pending: 0, 'In Progress': 0, Completed: 0 };
+                const snapshotCounts = { Decided: 0, Discussing: 0, Unresolved: 0 };
+
+                parsedSummary.enrichedRows.forEach((row: any) => {
+                  const timeLabel = row.date || 'Unknown';
+                  
+                  if (row.decisionCount > 0) decisionsMap[timeLabel] = (decisionsMap[timeLabel] || 0) + 1;
+                  if (row.conflictDetected > 0) conflictsMap[timeLabel] = (conflictsMap[timeLabel] || 0) + 1;
+                  
+                  const task = (row.taskStatus || '').toLowerCase();
+                  if (task.includes('pending')) statusCounts.Pending++;
+                  if (task.includes('progress')) statusCounts['In Progress']++;
+                  if (task.includes('complet')) statusCounts.Completed++;
+
+                  const res = (row.resolutionStatus || '').toLowerCase();
+                  if (res.includes('decid')) snapshotCounts.Decided++;
+                  if (res.includes('discuss')) snapshotCounts.Discussing++;
+                  if (res.includes('unresolv')) snapshotCounts.Unresolved++;
+                });
+
+                updatedData = {
+                  ...updatedData,
+                  decisionsPerWeek: Object.keys(decisionsMap).map(week => ({ week, count: decisionsMap[week] })),
+                  conflictsTimeline: Object.keys(conflictsMap).map(time => ({ time, count: conflictsMap[time] })),
+                  taskStatus: [
+                    { name: 'Pending', value: statusCounts.Pending },
+                    { name: 'In Progress', value: statusCounts['In Progress'] },
+                    { name: 'Completed', value: statusCounts.Completed }
+                  ],
+                  statusSnapshot: [
+                    { name: 'Decided', value: snapshotCounts.Decided },
+                    { name: 'Discussing', value: snapshotCounts.Discussing },
+                    { name: 'Unresolved', value: snapshotCounts.Unresolved }
+                  ]
+                };
+              }
+
+              setData(prev => prev ? { ...prev, ...updatedData } : null);
             }
 
           } catch (parseError) {
